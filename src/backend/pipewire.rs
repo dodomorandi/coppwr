@@ -105,35 +105,35 @@ pub fn pipewire_thread(
                 mainloop.quit();
             }
             Request::CreateObject(object_type, factory, props) => {
-                let props = util::key_val_to_props(props.into_iter());
+                let props = util::key_val_to_props(props.into_vec().into_iter());
 
                 let proxy = match object_type {
                     ObjectType::Link => core
-                        .create_object::<pw::link::Link, _>(factory.as_str(), &props)
+                        .create_object::<pw::link::Link, _>(factory.as_ref(), &props)
                         .map(ProxyT::upcast),
                     ObjectType::Port => core
-                        .create_object::<pw::port::Port, _>(factory.as_str(), &props)
+                        .create_object::<pw::port::Port, _>(factory.as_ref(), &props)
                         .map(ProxyT::upcast),
                     ObjectType::Node => core
-                        .create_object::<pw::node::Node, _>(factory.as_str(), &props)
+                        .create_object::<pw::node::Node, _>(factory.as_ref(), &props)
                         .map(ProxyT::upcast),
                     ObjectType::Client => core
-                        .create_object::<pw::client::Client, _>(factory.as_str(), &props)
+                        .create_object::<pw::client::Client, _>(factory.as_ref(), &props)
                         .map(ProxyT::upcast),
                     ObjectType::Device => core
-                        .create_object::<pw::device::Device, _>(factory.as_str(), &props)
+                        .create_object::<pw::device::Device, _>(factory.as_ref(), &props)
                         .map(ProxyT::upcast),
                     ObjectType::Factory => core
-                        .create_object::<pw::factory::Factory, _>(factory.as_str(), &props)
+                        .create_object::<pw::factory::Factory, _>(factory.as_ref(), &props)
                         .map(ProxyT::upcast),
                     ObjectType::Metadata => core
-                        .create_object::<pw::metadata::Metadata, _>(factory.as_str(), &props)
+                        .create_object::<pw::metadata::Metadata, _>(factory.as_ref(), &props)
                         .map(ProxyT::upcast),
                     ObjectType::Module => core
-                        .create_object::<pw::module::Module, _>(factory.as_str(), &props)
+                        .create_object::<pw::module::Module, _>(factory.as_ref(), &props)
                         .map(ProxyT::upcast),
                     ObjectType::Profiler => core
-                        .create_object::<pw::profiler::Profiler, _>(factory.as_str(), &props)
+                        .create_object::<pw::profiler::Profiler, _>(factory.as_ref(), &props)
                         .map(ProxyT::upcast),
                     _ => {
                         eprintln!("{object_type} unimplemented");
@@ -173,15 +173,15 @@ pub fn pipewire_thread(
                 args,
                 props,
             } => {
-                let props = props.map(|props| util::key_val_to_props(props.into_iter()));
+                let props = props.map(|props| util::key_val_to_props(props.into_vec().into_iter()));
 
                 let prev = std::env::var_os("PIPEWIRE_MODULE_DIR");
                 if let Some(ref module_dir) = module_dir {
-                    std::env::set_var("PIPEWIRE_MODULE_DIR", module_dir);
+                    std::env::set_var("PIPEWIRE_MODULE_DIR", module_dir.as_ref());
                 }
 
                 if context
-                    .load_module(name.as_str(), args.as_deref(), props)
+                    .load_module(name.as_ref(), args.as_deref(), props)
                     .is_err()
                 {
                     eprintln!("Failed to load module: Name: {name} - Directory: {module_dir:?} - Arguments: {args:?}");
@@ -228,11 +228,11 @@ pub fn pipewire_thread(
                 }
 
                 let infos = Box::new([
-                    ("Name", info.name().to_owned()),
-                    ("Hostname", info.host_name().to_owned()),
-                    ("Username", info.user_name().to_owned()),
-                    ("Version", info.version().to_owned()),
-                    ("Cookie", info.cookie().to_string()),
+                    ("Name", info.name().into()),
+                    ("Hostname", info.host_name().into()),
+                    ("Username", info.user_name().into()),
+                    ("Version", info.version().into()),
+                    ("Cookie", info.cookie().to_string().into_boxed_str()),
                 ]);
 
                 sx.send(Event::GlobalInfo(0, infos)).ok();

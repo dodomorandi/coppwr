@@ -106,8 +106,12 @@ impl ObjectCreator {
                     let factory = factory.unwrap();
                     sx.send(Request::CreateObject(
                         factory.object_type.clone(),
-                        factory.name.clone(),
-                        self.props.list().clone(),
+                        factory.name.clone().into_boxed_str(),
+                        self.props
+                            .list()
+                            .iter()
+                            .map(|(k, v)| (k.clone().into_boxed_str(), v.clone().into_boxed_str()))
+                            .collect(),
                     ))
                     .ok();
                 }

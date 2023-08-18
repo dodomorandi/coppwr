@@ -68,7 +68,7 @@ impl Tool for ContextManager {
 }
 
 impl ContextManager {
-    pub fn set_context_properties(&mut self, properties: BTreeMap<String, String>) {
+    pub fn set_context_properties(&mut self, properties: BTreeMap<Box<str>, String>) {
         self.properties.set_map(properties);
     }
 
@@ -141,19 +141,22 @@ impl ContextManager {
                                     .module_dir
                                     .is_empty()
                                     .not()
-                                    .then(|| self.module_dir.clone()),
-                                name: self.module_name.clone(),
+                                    .then(|| self.module_dir.clone().into_boxed_str()),
+                                name: self.module_name.clone().into_boxed_str(),
                                 args: self
                                     .module_args
                                     .is_empty()
                                     .not()
-                                    .then(|| self.module_args.clone()),
-                                props: self
-                                    .module_props
-                                    .list()
-                                    .is_empty()
-                                    .not()
-                                    .then(|| self.module_props.list().clone()),
+                                    .then(|| self.module_args.clone().into_boxed_str()),
+                                props: self.module_props.list().is_empty().not().then(|| {
+                                    self.module_props
+                                        .list()
+                                        .iter()
+                                        .map(|(k, v)| {
+                                            (k.clone().into_boxed_str(), v.clone().into_boxed_str())
+                                        })
+                                        .collect()
+                                }),
                             })
                             .ok();
                         }

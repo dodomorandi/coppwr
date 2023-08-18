@@ -66,7 +66,7 @@ impl GlobalsStore {
         &mut self,
         id: u32,
         object_type: ObjectType,
-        props: Option<BTreeMap<String, String>>,
+        props: Option<BTreeMap<Box<str>, String>>,
     ) -> &Rc<RefCell<Global>> {
         use std::collections::btree_map::Entry;
 
@@ -114,7 +114,7 @@ impl GlobalsStore {
         self.globals.remove(&id)
     }
 
-    pub fn set_global_props(&mut self, id: u32, props: BTreeMap<String, String>) {
+    pub fn set_global_props(&mut self, id: u32, props: BTreeMap<Box<str>, String>) {
         self.globals
             .entry(id)
             .and_modify(|global| global.borrow_mut().set_props(props));

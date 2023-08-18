@@ -159,7 +159,9 @@ impl ObjectData {
 
                         sx.send(Request::CallObjectMethod(
                             id,
-                            ObjectMethod::ClientUpdatePermissions(all_permissions),
+                            ObjectMethod::ClientUpdatePermissions(
+                                all_permissions.into_boxed_slice(),
+                            ),
                         ))
                         .ok();
 
@@ -188,8 +190,8 @@ pub struct Global {
 
     subobjects: Vec<Weak<RefCell<Global>>>,
 
-    info: Option<Box<[(&'static str, String)]>>,
-    props: BTreeMap<String, String>,
+    info: Option<Box<[(&'static str, Box<str>)]>>,
+    props: BTreeMap<Box<str>, String>,
 
     object_data: ObjectData,
 }
@@ -198,7 +200,7 @@ impl Global {
     pub fn new(
         id: u32,
         object_type: pw::types::ObjectType,
-        props: Option<BTreeMap<String, String>>,
+        props: Option<BTreeMap<Box<str>, String>>,
     ) -> Self {
         let mut this = Self {
             id,
@@ -252,9 +254,9 @@ impl Global {
             for (k, v) in self
                 .props
                 .iter()
-                .filter(|(k, _)| k.ends_with(".name") && k.as_str() != "library.name")
+                .filter(|(k, _)| k.ends_with(".name") && k.as_ref() != "library.name")
             {
-                if *self.object_type() != ObjectType::Factory && k == "factory.name" {
+                if *self.object_type() != ObjectType::Factory && k.as_ref() == "factory.name" {
                     continue;
                 }
                 name = Some(v);
@@ -321,7 +323,13 @@ impl Global {
 
             ui.push_id(self.id, |ui| {
                 if let Some(info) = self.info() {
-                    key_val_display(ui, 400f32, f32::INFINITY, "Info", info.iter().cloned());
+                    key_val_display(
+                        ui,
+                        400f32,
+                        f32::INFINITY,
+                        "Info",
+                        info.iter().map(|(k, v)| (*k, v.as_ref())),
+                    );
                 }
 
                 // Clients can have their properties updated
@@ -336,7 +344,12 @@ impl Global {
                         ui.separator();
 
                         if ui.button("Update properties").clicked() {
-                            self.props.extend(user_properties.take());
+                            self.props.extend(
+                                user_properties
+                                    .take()
+                                    .into_iter()
+                                    .map(|(k, v)| (k.into_boxed_str(), v)),
+                            );
 
                             sx.send(Request::CallObjectMethod(
                                 self.id,
@@ -346,7 +359,13 @@ impl Global {
                         }
                     });
                 } else {
-                    key_val_display(ui, 400f32, f32::INFINITY, "Properties", self.props().iter());
+                    key_val_display(
+                        ui,
+                        400f32,
+                        f32::INFINITY,
+                        "Properties",
+                        self.props().iter().map(|(k, v)| (k.as_ref(), v.as_str())),
+                    );
                 }
 
                 let subobjects_header = match self.object_type() {
@@ -448,20 +467,20 @@ impl Global {
         self.subobjects.push(subobject);
     }
 
-    pub const fn props(&self) -> &BTreeMap<String, String> {
+    pub const fn props(&self) -> &BTreeMap<Box<str>, String> {
         &self.props
     }
 
-    pub fn set_props(&mut self, props: BTreeMap<String, String>) {
+    pub fn set_props(&mut self, props: BTreeMap<Box<str>, String>) {
         self.props = props;
         self.update();
     }
 
-    pub fn info(&self) -> Option<&[(&'static str, String)]> {
+    pub fn info(&self) -> Option<&[(&'static str, Box<str>)]> {
         self.info.as_deref()
     }
 
-    pub fn set_info(&mut self, info: Option<Box<[(&'static str, String)]>>) {
+    pub fn set_info(&mut self, info: Option<Box<[(&'static str, Box<str>)]>>) {
         self.info = info;
     }
 

@@ -30,20 +30,20 @@ struct Property {
 }
 
 impl Property {
-    fn set_request(&self, key: String) -> ObjectMethod {
+    fn set_request(&self, key: Box<str>) -> ObjectMethod {
         ObjectMethod::MetadataSetProperty {
             subject: self.subject,
             key,
-            type_: self.type_.as_ref().cloned(),
-            value: Some(self.value.clone()),
+            type_: self.type_.clone().map(String::into_boxed_str),
+            value: Some(self.value.clone().into_boxed_str()),
         }
     }
 
-    fn clear_request(&self, key: String) -> ObjectMethod {
+    fn clear_request(&self, key: Box<str>) -> ObjectMethod {
         ObjectMethod::MetadataSetProperty {
             subject: self.subject,
             key,
-            type_: self.type_.as_ref().cloned(),
+            type_: self.type_.clone().map(String::into_boxed_str),
             value: None,
         }
     }
@@ -145,14 +145,14 @@ impl MetadataEditor {
                                 if ui.small_button("Clear").clicked() {
                                     sx.send(Request::CallObjectMethod(
                                         *id,
-                                        prop.clear_request(key.clone()),
+                                        prop.clear_request(key.clone().into_boxed_str()),
                                     ))
                                     .ok();
                                 }
                                 if ui.small_button("Set").clicked() {
                                     sx.send(Request::CallObjectMethod(
                                         *id,
-                                        prop.set_request(key.clone()),
+                                        prop.set_request(key.clone().into_boxed_str()),
                                     ))
                                     .ok();
                                 }
@@ -217,7 +217,7 @@ impl MetadataEditor {
                                     if ui.small_button("Set").clicked() {
                                         sx.send(Request::CallObjectMethod(
                                             *id,
-                                            prop.set_request(key.clone()),
+                                            prop.set_request(key.clone().into_boxed_str()),
                                         ))
                                         .ok();
                                     }
@@ -252,8 +252,11 @@ impl MetadataEditor {
                         ui.add_enabled_ui(!metadata.user_properties.is_empty(), |ui| {
                             if ui.button("Set all").clicked() {
                                 for (key, prop) in std::mem::take(&mut metadata.user_properties) {
-                                    sx.send(Request::CallObjectMethod(*id, prop.set_request(key)))
-                                        .ok();
+                                    sx.send(Request::CallObjectMethod(
+                                        *id,
+                                        prop.set_request(key.into_boxed_str()),
+                                    ))
+                                    .ok();
                                 }
                             }
                         });

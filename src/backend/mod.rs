@@ -31,29 +31,29 @@ pub enum ObjectMethod {
         index: u32,
         num: u32,
     },
-    ClientUpdatePermissions(Vec<pw::permissions::Permissions>),
-    ClientUpdateProperties(std::collections::BTreeMap<String, String>),
+    ClientUpdatePermissions(Box<[pw::permissions::Permissions]>),
+    ClientUpdateProperties(std::collections::BTreeMap<Box<str>, String>),
     MetadataSetProperty {
         subject: u32,
-        key: String,
-        type_: Option<String>,
-        value: Option<String>,
+        key: Box<str>,
+        type_: Option<Box<str>>,
+        value: Option<Box<str>>,
     },
     MetadataClear,
 }
 
 pub enum Request {
     Stop,
-    CreateObject(pw::types::ObjectType, String, Vec<(String, String)>),
+    CreateObject(pw::types::ObjectType, Box<str>, Box<[(Box<str>, Box<str>)]>),
     DestroyObject(u32),
     LoadModule {
-        module_dir: Option<String>,
-        name: String,
-        args: Option<String>,
-        props: Option<Vec<(String, String)>>,
+        module_dir: Option<Box<str>>,
+        name: Box<str>,
+        args: Option<Box<str>>,
+        props: Option<Box<[(Box<str>, Box<str>)]>>,
     },
     GetContextProperties,
-    UpdateContextProperties(std::collections::BTreeMap<String, String>),
+    UpdateContextProperties(std::collections::BTreeMap<Box<str>, String>),
     CallObjectMethod(u32, ObjectMethod),
 }
 
@@ -61,11 +61,11 @@ pub enum Event {
     GlobalAdded(
         u32,
         pw::types::ObjectType,
-        Option<std::collections::BTreeMap<String, String>>,
+        Option<std::collections::BTreeMap<Box<str>, String>>,
     ),
     GlobalRemoved(u32),
-    GlobalInfo(u32, Box<[(&'static str, String)]>),
-    GlobalProperties(u32, std::collections::BTreeMap<String, String>),
+    GlobalInfo(u32, Box<[(&'static str, Box<str>)]>),
+    GlobalProperties(u32, std::collections::BTreeMap<Box<str>, String>),
     ClientPermissions(u32, u32, Vec<pw::permissions::Permissions>),
     ProfilerProfile(Vec<self::pods::profiler::Profiling>),
     MetadataProperty {
@@ -75,7 +75,7 @@ pub enum Event {
         type_: Option<String>,
         value: Option<String>,
     },
-    ContextProperties(std::collections::BTreeMap<String, String>),
+    ContextProperties(std::collections::BTreeMap<Box<str>, String>),
     Stop,
 }
 
